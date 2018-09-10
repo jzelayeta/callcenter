@@ -60,7 +60,7 @@ This is the core. Dispatcher has the following responsibilities:
  attendant to be inserted again after it finishes the call, otherwise Attendants will only be able to answer only one call, 
  and this call center will only be able to dispatch N calls, being N the number of Attendants.
  
- That's why `Attendant` extends `Observable` and `Dispatcher` implements `Observable`, so every time an Attendant finish a call
+ That's why `Attendant` extends `Observable` and `Dispatcher` implements `Observer`, so every time an Attendant finish a call
  it will notify its Observer. And the Dispatcher, every time that is notified from an Attendant, will put it back to
  attendants queue to be ready for answer more calls.
  
