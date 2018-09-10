@@ -25,12 +25,8 @@ public class Dispatcher implements Observer {
 		pendingCallsQueue = new LinkedBlockingQueue<>();
 		finishedCallsQueue = new LinkedBlockingQueue<>();
 
-	}
-
-	public void dispatchCall(Call call) {
-		pendingCallsQueue.add(call);
 		priorityJobScheduler.execute(() -> {
-			while (!pendingCallsQueue.isEmpty()) {
+			while (true) {
 				try {
 					Attendant attendant = attendantsQueue.take();
 					Call callToDispatch = pendingCallsQueue.take();
@@ -42,6 +38,10 @@ public class Dispatcher implements Observer {
 				}
 			}
 		});
+	}
+
+	public void dispatchCall(Call call) {
+		pendingCallsQueue.add(call);
 	}
 
 	public void addAttendant(Attendant attendant) {
