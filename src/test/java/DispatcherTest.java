@@ -9,11 +9,17 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import com.almundo.callcenter.ICall;
+import com.almundo.callcenter.IDispatcher;
+import com.almundo.callcenter.impl.Attendant;
+import com.almundo.callcenter.AttendantPriority;
+import com.almundo.callcenter.impl.Call;
+import com.almundo.callcenter.impl.Dispatcher;
 
 public class DispatcherTest {
 
 	private static final int POOL_SIZE = 10;
-	private static Dispatcher dispatcher;
+	private static IDispatcher dispatcher;
 
 	@Before
 	public void callCenterSetUp() {

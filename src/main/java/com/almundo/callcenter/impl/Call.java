@@ -1,6 +1,9 @@
-import java.util.UUID;
+package com.almundo.callcenter.impl;
 
-public class Call implements ICall{
+import java.util.UUID;
+import com.almundo.callcenter.ICall;
+
+public class Call implements ICall {
 
 	private UUID id;
 	private Long start;
