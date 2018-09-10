@@ -7,7 +7,7 @@ public class Attendant extends Observable implements Runnable  {
 
 	private Long id;
 	private AttendantPriority attendantPriority;
-	private Call call;
+	private ICall call;
 	private static final Logger LOGGER = LoggerFactory.getLogger(Attendant.class);
 
 	public Attendant(Long id, AttendantPriority attendantPriority) {
@@ -16,6 +16,7 @@ public class Attendant extends Observable implements Runnable  {
 	}
 
 	public void run() {
+		this.call.setStart(System.nanoTime());
 		LOGGER.info("Call " + call.getId() + " started by Attendant id: " + this.id + " with priority : " + attendantPriority.name());
 		int callDuration = ThreadLocalRandom.current().nextInt(5000, 10000 + 1);
 
@@ -25,19 +26,22 @@ public class Attendant extends Observable implements Runnable  {
 			Thread.currentThread().interrupt();
 		}
 
-		LOGGER.info("Call ended after: " + callDuration + " seconds. Attendant id: " + this.id);
+		this.call.setAttendant(this);
 		this.call.setStop(System.nanoTime());
+		LOGGER.info("Call ended after: " + this.call.getDuration() + " seconds. Attendant id: " + this.id);
+		setChanged();
+		notifyObservers(this);
 	}
 
 	public AttendantPriority getAttendantPriority() {
 		return attendantPriority;
 	}
 
-	public void assignCall(Call call) {
+	public void assignCall(ICall call) {
 		this.call = call;
 	}
 
-	public Call getCall() {
+	public ICall getCall() {
 		return call;
 	}
 }

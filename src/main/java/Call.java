@@ -1,22 +1,17 @@
+import java.util.UUID;
+
 public class Call implements ICall{
 
-	private Long id;
+	private UUID id;
 	private Long start;
 	private Long stop;
 	private Attendant attendant;
 
-	public Call(Long id, Long start, Long stop) {
+	public Call(UUID id) {
 		this.id = id;
-		this.start = start;
-		this.stop = stop;
 	}
 
-	public Call(Long id) {
-		this.id = id;
-		this.start = System.nanoTime();
-	}
-
-	public Long getId() {
+	public UUID getId() {
 		return id;
 	}
 
@@ -28,7 +23,7 @@ public class Call implements ICall{
 		return stop;
 	}
 
-	public void setId(Long id) {
+	public void setId(UUID id) {
 		this.id = id;
 	}
 

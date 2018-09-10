@@ -1,5 +1,6 @@
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.BlockingQueue;
@@ -15,8 +16,8 @@ public class Dispatcher implements Observer {
 	private ExecutorService priorityJobPoolExecutor;
 	private ExecutorService priorityJobScheduler = Executors.newSingleThreadExecutor();
 	private PriorityBlockingQueue<Attendant> attendantsQueue;
-	private BlockingQueue<Call> pendingCallsQueue;
-	private BlockingQueue<Call> finishedCallsQueue;
+	private BlockingQueue<ICall> pendingCallsQueue;
+	private BlockingQueue<ICall> finishedCallsQueue;
 	private static final Logger LOGGER = LoggerFactory.getLogger(Attendant.class);
 
 	public Dispatcher(Integer poolSize) {
@@ -29,7 +30,7 @@ public class Dispatcher implements Observer {
 			while (true) {
 				try {
 					Attendant attendant = attendantsQueue.take();
-					Call callToDispatch = pendingCallsQueue.take();
+					ICall callToDispatch = pendingCallsQueue.take();
 					attendant.assignCall(callToDispatch);
 					priorityJobPoolExecutor.execute(attendant);
 				} catch (InterruptedException e) {
@@ -40,7 +41,7 @@ public class Dispatcher implements Observer {
 		});
 	}
 
-	public void dispatchCall(Call call) {
+	public void dispatchCall(ICall call) {
 		pendingCallsQueue.add(call);
 	}
 
@@ -48,21 +49,21 @@ public class Dispatcher implements Observer {
 		attendantsQueue.add(attendant);
 	}
 
-	public void addAttendants(Attendant... attendants) {
-		attendantsQueue.addAll(Arrays.asList(attendants));
+	public void addAttendants(List<Attendant> attendants) {
+		attendantsQueue.addAll(attendants);
 	}
 
-	public BlockingQueue<Call> getFinishedCallsQueue() {
+	public BlockingQueue<ICall> getFinishedCallsQueue() {
 		return finishedCallsQueue;
 	}
 
-	public BlockingQueue<Call> getPendingCallsQueue() {
+	public BlockingQueue<ICall> getPendingCallsQueue() {
 		return pendingCallsQueue;
 	}
 
 	@Override
 	public void update(Observable o, Object arg) {
-		LOGGER.info("UPDATED!");
+//		LOGGER.info("UPDATED!");
 		Attendant attendant = (Attendant) arg;
 		attendantsQueue.add(attendant);
 		finishedCallsQueue.add(attendant.getCall());
