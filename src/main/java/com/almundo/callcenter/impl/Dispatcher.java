@@ -9,24 +9,26 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.almundo.callcenter.IAttendant;
 import com.almundo.callcenter.ICall;
 import com.almundo.callcenter.IDispatcher;
-import com.almundo.callcenter.impl.Attendant;
 
 public class Dispatcher implements IDispatcher {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(Dispatcher.class);
 
 	private ExecutorService priorityJobPoolExecutor;
 	private ExecutorService priorityJobScheduler = Executors.newSingleThreadExecutor();
 	private PriorityBlockingQueue<IAttendant> attendantsQueue;
-	private BlockingQueue<ICall> pendingCallsQueue;
-	private BlockingQueue<ICall> finishedCallsQueue;
+	private BlockingQueue<ICall> pendingCallsQueue = new LinkedBlockingQueue<>();
+	private BlockingQueue<ICall> finishedCallsQueue = new LinkedBlockingQueue<>();
+
 
 	public Dispatcher(Integer poolSize) {
 		priorityJobPoolExecutor = Executors.newFixedThreadPool(poolSize);
 		attendantsQueue = new PriorityBlockingQueue<>(poolSize, Comparator.comparing(IAttendant::getAttendantPriority));
-		pendingCallsQueue = new LinkedBlockingQueue<>();
-		finishedCallsQueue = new LinkedBlockingQueue<>();
 
 		priorityJobScheduler.execute(() -> {
 			while (true) {
@@ -36,7 +38,7 @@ public class Dispatcher implements IDispatcher {
 					attendant.assignCall(callToDispatch);
 					priorityJobPoolExecutor.execute(attendant);
 				} catch (InterruptedException e) {
-					// exception needs special handling
+					LOGGER.error("FAILED! " + e);
 					break;
 				}
 			}
@@ -64,7 +66,7 @@ public class Dispatcher implements IDispatcher {
 	public void update(Observable o, Object arg) {
 		Attendant attendant = (Attendant) arg;
 		attendantsQueue.add(attendant);
-		finishedCallsQueue.add(attendant.getCall());
+		finishedCallsQueue.add(attendant.getCurrentCall());
 	}
 
 	private void close(ExecutorService scheduler) {

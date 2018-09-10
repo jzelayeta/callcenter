@@ -26,14 +26,13 @@ public class DispatcherTest {
 
 		dispatcher = new Dispatcher(POOL_SIZE);
 
-		List<Attendant> operators = attendantWithPrioritySpawner(6, AttendantPriority.OPERATOR);
-		List<Attendant> supervisors = attendantWithPrioritySpawner(3, AttendantPriority.SUPERVISOR);
-		List<Attendant> director = attendantWithPrioritySpawner(3, AttendantPriority.DIRECTOR);
-
+		List<Attendant> operators = spawnAttendantsWithPriority(6, AttendantPriority.OPERATOR);
+		List<Attendant> supervisors = spawnAttendantsWithPriority(3, AttendantPriority.SUPERVISOR);
+		List<Attendant> directors = spawnAttendantsWithPriority(3, AttendantPriority.DIRECTOR);
 
 		dispatcher.addAttendants(operators);
 		dispatcher.addAttendants(supervisors);
-		dispatcher.addAttendants(director);
+		dispatcher.addAttendants(directors);
 
 	}
 
@@ -48,7 +47,7 @@ public class DispatcherTest {
 
 		dispatcher.dispatchCall(call);
 
-		waitAmount(10000);
+		waitMillis(10000);
 
 		assertEquals(1, dispatcher.getFinishedCallsQueue().size());
 		assertEquals(AttendantPriority.OPERATOR, dispatcher.getFinishedCallsQueue().peek().getAttendant().getAttendantPriority());
@@ -56,51 +55,48 @@ public class DispatcherTest {
 	}
 
 	@Test
-	public void tenCalls() {
-		List<ICall> calls = callSpawner(10);
-
-		calls.forEach(dispatcher::dispatchCall);
-
-		waitAmount(10000);
-
-		assertEquals(10, dispatcher.getFinishedCallsQueue().size());
-
-		List<ICall> finishedCalls = dispatcher.getFinishedCallsQueue().stream().sorted(Comparator.comparing(ICall::getStart)).collect(Collectors.toList());
-
-		assertFirstTenCalls(finishedCalls);
-
+	public void sameAmountOfIncomingCallsAsAttendantsAvailability() {
+		List<ICall> calls = spawnCalls(10);
+		assertCallsAreDispatched(calls);
 	}
 
 	@Test
-	public void moreThanTenCalls() {
-		List<ICall> calls = callSpawner(15);
+	public void moreAmountOfIncomingCallsThanAttendantsAvailability() {
+		List<ICall> calls = spawnCalls(15);
+		assertCallsAreDispatched(calls);
+	}
 
+	private void assertCallsAreDispatched(List<ICall> calls) {
 		calls.forEach(dispatcher::dispatchCall);
-
-		waitAmount(10000);
-
-		assertEquals(15, dispatcher.getFinishedCallsQueue().size());
+		waitMillis(10000);
+		assertEquals(calls.size(), dispatcher.getFinishedCallsQueue().size());
 
 		List<ICall> finishedCalls = dispatcher.getFinishedCallsQueue().stream().sorted(Comparator.comparing(ICall::getStart)).collect(Collectors.toList());
 
-		assertFirstTenCalls(finishedCalls);
+		assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority(finishedCalls);
 
 	}
 
-	private List<ICall> callSpawner(int amount) {
+	private static void assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority(List<ICall> finishedCalls) {
+		finishedCalls.subList(0, 6).forEach(call -> assertEquals(AttendantPriority.OPERATOR, call.getAttendant().getAttendantPriority()));
+		finishedCalls.subList(6, 9).forEach(call -> assertEquals(AttendantPriority.SUPERVISOR, call.getAttendant().getAttendantPriority()));
+		finishedCalls.subList(9, 10).forEach(call -> assertEquals(AttendantPriority.DIRECTOR, call.getAttendant().getAttendantPriority()));
+	}
+
+	private List<ICall> spawnCalls(int amount) {
 		return Stream.generate(() -> new Call(UUID.randomUUID()))
 				.limit(amount)
 				.collect(Collectors.toList());
 	}
 
-	private List<Attendant> attendantWithPrioritySpawner(int amount, AttendantPriority priority) {
+	private List<Attendant> spawnAttendantsWithPriority(int amount, AttendantPriority priority) {
 		return Stream.generate(() -> new Attendant(new RandomDataGenerator().nextLong(1, 500), priority))
 				.limit(amount)
 				.peek(attendant -> attendant.addObserver(dispatcher))
 				.collect(Collectors.toList());
 	}
 
-	private static void waitAmount(long amountInMs) {
+	private static void waitMillis(long amountInMs) {
 		while (dispatcher.getPendingCallsQueue().size() != 0) ;
 
 		try {
@@ -108,12 +104,6 @@ public class DispatcherTest {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-	}
-
-	private static void assertFirstTenCalls(List<ICall> finishedCalls) {
-		finishedCalls.subList(0, 6).forEach(call -> assertEquals(AttendantPriority.OPERATOR, call.getAttendant().getAttendantPriority()));
-		finishedCalls.subList(6, 9).forEach(call -> assertEquals(AttendantPriority.SUPERVISOR, call.getAttendant().getAttendantPriority()));
-		finishedCalls.subList(9, 10).forEach(call -> assertEquals(AttendantPriority.DIRECTOR, call.getAttendant().getAttendantPriority()));
 	}
 
 }

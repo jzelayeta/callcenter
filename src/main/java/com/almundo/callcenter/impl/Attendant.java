@@ -12,7 +12,7 @@ public class Attendant extends Observable implements IAttendant {
 
 	private Long id;
 	private AttendantPriority attendantPriority;
-	private ICall call;
+	private ICall currentCall;
 	private static final Logger LOGGER = LoggerFactory.getLogger(Attendant.class);
 
 	public Attendant(Long id, AttendantPriority attendantPriority) {
@@ -21,8 +21,8 @@ public class Attendant extends Observable implements IAttendant {
 	}
 
 	public void run() {
-		this.call.setStart(System.nanoTime());
-		LOGGER.info("com.almundo.callcenter.impl.Call " + call.getId() + " started by com.almundo.callcenter.impl.Attendant id: " + this.id + " with priority : " + attendantPriority.name());
+		this.currentCall.setStart(System.nanoTime());
+		LOGGER.info("com.almundo.callcenter.impl.Call " + currentCall.getId() + " started by com.almundo.callcenter.impl.Attendant id: " + this.id + " with priority : " + attendantPriority.name());
 		int callDuration = ThreadLocalRandom.current().nextInt(5000, 10000);
 
 		try {
@@ -31,9 +31,9 @@ public class Attendant extends Observable implements IAttendant {
 			Thread.currentThread().interrupt();
 		}
 
-		this.call.setStop(System.nanoTime());
-		this.call.setAttendant(this);
-		LOGGER.info("com.almundo.callcenter.impl.Call ended after: " + this.call.getDuration() + " seconds. com.almundo.callcenter.impl.Attendant id: " + this.id);
+		this.currentCall.setStop(System.nanoTime());
+		this.currentCall.setAttendant(this);
+		LOGGER.info("com.almundo.callcenter.impl.Call ended after: " + this.currentCall.getDuration() + " seconds. com.almundo.callcenter.impl.Attendant id: " + this.id);
 		setChanged();
 		notifyObservers(this);
 	}
@@ -45,12 +45,12 @@ public class Attendant extends Observable implements IAttendant {
 
 	@Override
 	public void assignCall(ICall call) {
-		this.call = call;
+		this.currentCall = call;
 	}
 
 	@Override
-	public ICall getCall() {
-		return call;
+	public ICall getCurrentCall() {
+		return currentCall;
 	}
 
 	@Override

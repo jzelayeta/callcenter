@@ -6,7 +6,7 @@ public interface IAttendant extends Runnable{
 
 	AttendantPriority getAttendantPriority();
 
-	ICall getCall();
+	ICall getCurrentCall();
 
 	void assignCall(ICall call);
 
