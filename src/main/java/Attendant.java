@@ -1,8 +1,9 @@
+import java.util.Observable;
 import java.util.concurrent.ThreadLocalRandom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Attendant implements Runnable{
+public class Attendant extends Observable implements Runnable  {
 
 	private Long id;
 	private AttendantPriority attendantPriority;
@@ -15,12 +16,16 @@ public class Attendant implements Runnable{
 	}
 
 	public void run() {
+		LOGGER.info("Call " + call.getId() + " started by Attendant id: " + this.id + " with priority : " + attendantPriority.name());
+		int callDuration = ThreadLocalRandom.current().nextInt(5000, 10000 + 1);
+
 		try {
-			int callDuration = ThreadLocalRandom.current().nextInt(5000, 10000 + 1);
 			Thread.sleep(callDuration);
-			LOGGER.info("Call ended after: " + callDuration + " seconds. Attendant id: " + this.id + " with priority : " + attendantPriority.name());
 		} catch (InterruptedException ignored) {
+			Thread.currentThread().interrupt();
 		}
+
+		LOGGER.info("Call ended after: " + callDuration + " seconds. Attendant id: " + this.id);
 		this.call.setStop(System.nanoTime());
 	}
 
@@ -32,4 +37,7 @@ public class Attendant implements Runnable{
 		this.call = call;
 	}
 
+	public Call getCall() {
+		return call;
+	}
 }

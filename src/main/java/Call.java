@@ -1,10 +1,9 @@
-import java.time.Duration;
-
-public class Call {
+public class Call implements ICall{
 
 	private Long id;
 	private Long start;
 	private Long stop;
+	private Attendant attendant;
 
 	public Call(Long id, Long start, Long stop) {
 		this.id = id;
@@ -39,5 +38,13 @@ public class Call {
 
 	public void setStop(Long stop) {
 		this.stop = stop;
+	}
+
+	public Attendant getAttendant() {
+		return attendant;
+	}
+
+	public void setAttendant(Attendant attendant) {
+		this.attendant = attendant;
 	}
 }
