@@ -1,9 +1,9 @@
-package com.almundo.callcenter.impl;
+package com.almundo.callcenter.model;
 
+import java.time.Duration;
 import java.util.UUID;
-import com.almundo.callcenter.ICall;
 
-public class Call implements ICall {
+public class Call {
 
 	private UUID id;
 	private Long start;
@@ -22,14 +22,6 @@ public class Call implements ICall {
 		return start;
 	}
 
-	public Long getStop() {
-		return stop;
-	}
-
-	public void setId(UUID id) {
-		this.id = id;
-	}
-
 	public void setStart(Long start) {
 		this.start = start;
 	}
@@ -44,5 +36,10 @@ public class Call implements ICall {
 
 	public void setAttendant(Attendant attendant) {
 		this.attendant = attendant;
+	}
+
+	public long getDurationInSeconds() {
+		Duration duration = Duration.ZERO.plusNanos(stop).minusNanos(start);
+		return duration.getSeconds();
 	}
 }

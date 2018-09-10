@@ -9,19 +9,18 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import com.almundo.callcenter.AttendantPriority;
-import com.almundo.callcenter.ICall;
-import com.almundo.callcenter.impl.Attendant;
-import com.almundo.callcenter.impl.Call;
-import com.almundo.callcenter.impl.Dispatcher;
+import com.almundo.callcenter.model.AttendantPriority;
+import com.almundo.callcenter.model.Attendant;
+import com.almundo.callcenter.model.Call;
+import com.almundo.callcenter.model.Dispatcher;
 
 public class DispatcherTest {
 
 	private static final int POOL_SIZE = 10;
 	private static Dispatcher dispatcher;
-	List<Attendant> operators;
-	List<Attendant> supervisors;
-	List<Attendant> directors;
+	private List<Attendant> operators;
+	private List<Attendant> supervisors;
+	private List<Attendant> directors;
 
 	@Before
 	public void callCenterSetUp() {
@@ -58,34 +57,39 @@ public class DispatcherTest {
 
 	@Test
 	public void sameAmountOfIncomingCallsAsAttendantsAvailability() {
-		List<ICall> calls = spawnCalls(10);
+		List<Call> calls = spawnCalls(10);
 		assertCallsAreDispatched(calls);
 	}
 
 	@Test
 	public void moreAmountOfIncomingCallsThanAttendantsAvailability() {
-		List<ICall> calls = spawnCalls(15);
+		List<Call> calls = spawnCalls(15);
 		assertCallsAreDispatched(calls);
 	}
 
-	private void assertCallsAreDispatched(List<ICall> calls) {
+	private void assertCallsAreDispatched(List<Call> calls) {
 		calls.forEach(dispatcher::dispatchCall);
 		waitMillis(10000);
 		assertEquals(calls.size(), dispatcher.getFinishedCallsQueue().size());
 
-		List<ICall> finishedCalls = dispatcher.getFinishedCallsQueue().stream().sorted(Comparator.comparing(ICall::getStart)).collect(Collectors.toList());
+		List<Call> finishedCalls = dispatcher.getFinishedCallsQueue().stream().sorted(Comparator.comparing(Call::getStart)).collect(Collectors.toList());
 
 		assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority(finishedCalls);
 
 	}
 
-	private void assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority(List<ICall> finishedCalls) {
-		finishedCalls.subList(0, operators.size()).forEach(call -> assertEquals(AttendantPriority.OPERATOR, call.getAttendant().getAttendantPriority()));
-		finishedCalls.subList(operators.size(), operators.size() + supervisors.size()).forEach(call -> assertEquals(AttendantPriority.SUPERVISOR, call.getAttendant().getAttendantPriority()));
-		finishedCalls.subList(operators.size() + supervisors.size(), operators.size() + supervisors.size() + 1).forEach(call -> assertEquals(AttendantPriority.DIRECTOR, call.getAttendant().getAttendantPriority()));
+	private void assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority(List<Call> finishedCalls) {
+		finishedCalls.subList(0,
+				operators.size()).forEach(call -> assertEquals(AttendantPriority.OPERATOR, call.getAttendant().getAttendantPriority()));
+
+		finishedCalls.subList(operators.size(),
+				operators.size() + supervisors.size()).forEach(call -> assertEquals(AttendantPriority.SUPERVISOR, call.getAttendant().getAttendantPriority()));
+
+		finishedCalls.subList(operators.size() + supervisors.size(),
+				operators.size() + supervisors.size() + directors.size()).forEach(call -> assertEquals(AttendantPriority.DIRECTOR, call.getAttendant().getAttendantPriority()));
 	}
 
-	private List<ICall> spawnCalls(int amount) {
+	private List<Call> spawnCalls(int amount) {
 		return Stream.generate(() -> new Call(UUID.randomUUID()))
 				.limit(amount)
 				.collect(Collectors.toList());

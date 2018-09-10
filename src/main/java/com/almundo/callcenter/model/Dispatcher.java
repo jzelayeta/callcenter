@@ -1,4 +1,4 @@
-package com.almundo.callcenter.impl;
+package com.almundo.callcenter.model;
 
 import java.util.Comparator;
 import java.util.List;
@@ -12,8 +12,6 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.almundo.callcenter.IAttendant;
-import com.almundo.callcenter.ICall;
 
 public class Dispatcher implements Observer {
 
@@ -21,20 +19,20 @@ public class Dispatcher implements Observer {
 
 	private ExecutorService priorityJobPoolExecutor;
 	private ExecutorService priorityJobScheduler = Executors.newSingleThreadExecutor();
-	private PriorityBlockingQueue<IAttendant> attendantsQueue;
-	private BlockingQueue<ICall> pendingCallsQueue = new LinkedBlockingQueue<>();
-	private BlockingQueue<ICall> finishedCallsQueue = new LinkedBlockingQueue<>();
+	private PriorityBlockingQueue<Attendant> attendantsQueue;
+	private BlockingQueue<Call> pendingCallsQueue = new LinkedBlockingQueue<>();
+	private BlockingQueue<Call> finishedCallsQueue = new LinkedBlockingQueue<>();
 
 
 	public Dispatcher(Integer poolSize) {
 		priorityJobPoolExecutor = Executors.newFixedThreadPool(poolSize);
-		attendantsQueue = new PriorityBlockingQueue<>(poolSize, Comparator.comparing(IAttendant::getAttendantPriority));
+		attendantsQueue = new PriorityBlockingQueue<>(poolSize, Comparator.comparing(Attendant::getAttendantPriority));
 
 		priorityJobScheduler.execute(() -> {
 			while (true) {
 				try {
-					IAttendant attendant = attendantsQueue.take();
-					ICall callToDispatch = pendingCallsQueue.take();
+					Attendant attendant = attendantsQueue.take();
+					Call callToDispatch = pendingCallsQueue.take();
 					attendant.assignCall(callToDispatch);
 					priorityJobPoolExecutor.execute(attendant);
 				} catch (InterruptedException e) {
@@ -45,7 +43,7 @@ public class Dispatcher implements Observer {
 		});
 	}
 
-	public void dispatchCall(ICall call) {
+	public void dispatchCall(Call call) {
 		pendingCallsQueue.add(call);
 	}
 
@@ -53,11 +51,11 @@ public class Dispatcher implements Observer {
 		attendantsQueue.addAll(attendants);
 	}
 
-	public BlockingQueue<ICall> getFinishedCallsQueue() {
+	public BlockingQueue<Call> getFinishedCallsQueue() {
 		return finishedCallsQueue;
 	}
 
-	public BlockingQueue<ICall> getPendingCallsQueue() {
+	public BlockingQueue<Call> getPendingCallsQueue() {
 		return pendingCallsQueue;
 	}
 

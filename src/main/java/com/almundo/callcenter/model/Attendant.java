@@ -1,18 +1,15 @@
-package com.almundo.callcenter.impl;
+package com.almundo.callcenter.model;
 
 import java.util.Observable;
 import java.util.concurrent.ThreadLocalRandom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.almundo.callcenter.AttendantPriority;
-import com.almundo.callcenter.IAttendant;
-import com.almundo.callcenter.ICall;
 
-public class Attendant extends Observable implements IAttendant {
+public class Attendant extends Observable implements Runnable {
 
 	private Long id;
 	private AttendantPriority attendantPriority;
-	private ICall currentCall;
+	private Call currentCall;
 	private static final Logger LOGGER = LoggerFactory.getLogger(Attendant.class);
 
 	public Attendant(Long id, AttendantPriority attendantPriority) {
@@ -33,30 +30,21 @@ public class Attendant extends Observable implements IAttendant {
 
 		this.currentCall.setStop(System.nanoTime());
 		this.currentCall.setAttendant(this);
-		LOGGER.info("Call ended after: " + this.currentCall.getDuration() + " seconds. Attendant id: " + this.id);
+		LOGGER.info("Call ended after: " + this.currentCall.getDurationInSeconds() + " seconds. Attendant id: " + this.id);
 		setChanged();
 		notifyObservers(this);
 	}
 
-	@Override
 	public AttendantPriority getAttendantPriority() {
 		return attendantPriority;
 	}
 
-	@Override
-	public void assignCall(ICall call) {
+	public void assignCall(Call call) {
 		this.currentCall = call;
 	}
 
-	@Override
-	public ICall getCurrentCall() {
+	public Call getCurrentCall() {
 		return currentCall;
 	}
-
-	@Override
-	public Long getId() {
-		return id;
-	}
-
 
 }
