@@ -1,6 +1,7 @@
 # CallCenter Implementation
 
 ##Elements of the Model
+
     * Attendant
     * Attendant Priority
     * Call
@@ -51,5 +52,5 @@ This is the core. Dispatcher has the following responsibilities:
  execute it.
  
  `BlockingQueue` avoid the dispatcher to end with inconsistency, or worst than that, on deadlock due to
- concurrency.
+ concurrency.s
  
