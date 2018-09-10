@@ -22,7 +22,7 @@ public class Attendant extends Observable implements IAttendant {
 
 	public void run() {
 		this.currentCall.setStart(System.nanoTime());
-		LOGGER.info("com.almundo.callcenter.impl.Call " + currentCall.getId() + " started by com.almundo.callcenter.impl.Attendant id: " + this.id + " with priority : " + attendantPriority.name());
+		LOGGER.info("Call " + currentCall.getId() + " started by Attendant id: " + this.id + " with priority : " + attendantPriority.name());
 		int callDuration = ThreadLocalRandom.current().nextInt(5000, 10000);
 
 		try {
@@ -33,7 +33,7 @@ public class Attendant extends Observable implements IAttendant {
 
 		this.currentCall.setStop(System.nanoTime());
 		this.currentCall.setAttendant(this);
-		LOGGER.info("com.almundo.callcenter.impl.Call ended after: " + this.currentCall.getDuration() + " seconds. com.almundo.callcenter.impl.Attendant id: " + this.id);
+		LOGGER.info("Call ended after: " + this.currentCall.getDuration() + " seconds. Attendant id: " + this.id);
 		setChanged();
 		notifyObservers(this);
 	}

@@ -9,26 +9,28 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import com.almundo.callcenter.ICall;
-import com.almundo.callcenter.IDispatcher;
-import com.almundo.callcenter.impl.Attendant;
 import com.almundo.callcenter.AttendantPriority;
+import com.almundo.callcenter.ICall;
+import com.almundo.callcenter.impl.Attendant;
 import com.almundo.callcenter.impl.Call;
 import com.almundo.callcenter.impl.Dispatcher;
 
 public class DispatcherTest {
 
 	private static final int POOL_SIZE = 10;
-	private static IDispatcher dispatcher;
+	private static Dispatcher dispatcher;
+	List<Attendant> operators;
+	List<Attendant> supervisors;
+	List<Attendant> directors;
 
 	@Before
 	public void callCenterSetUp() {
 
 		dispatcher = new Dispatcher(POOL_SIZE);
 
-		List<Attendant> operators = spawnAttendantsWithPriority(6, AttendantPriority.OPERATOR);
-		List<Attendant> supervisors = spawnAttendantsWithPriority(3, AttendantPriority.SUPERVISOR);
-		List<Attendant> directors = spawnAttendantsWithPriority(3, AttendantPriority.DIRECTOR);
+		operators = spawnAttendantsWithPriority(6, AttendantPriority.OPERATOR);
+		supervisors = spawnAttendantsWithPriority(3, AttendantPriority.SUPERVISOR);
+		directors = spawnAttendantsWithPriority(1, AttendantPriority.DIRECTOR);
 
 		dispatcher.addAttendants(operators);
 		dispatcher.addAttendants(supervisors);
@@ -77,10 +79,10 @@ public class DispatcherTest {
 
 	}
 
-	private static void assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority(List<ICall> finishedCalls) {
-		finishedCalls.subList(0, 6).forEach(call -> assertEquals(AttendantPriority.OPERATOR, call.getAttendant().getAttendantPriority()));
-		finishedCalls.subList(6, 9).forEach(call -> assertEquals(AttendantPriority.SUPERVISOR, call.getAttendant().getAttendantPriority()));
-		finishedCalls.subList(9, 10).forEach(call -> assertEquals(AttendantPriority.DIRECTOR, call.getAttendant().getAttendantPriority()));
+	private void assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority(List<ICall> finishedCalls) {
+		finishedCalls.subList(0, operators.size()).forEach(call -> assertEquals(AttendantPriority.OPERATOR, call.getAttendant().getAttendantPriority()));
+		finishedCalls.subList(operators.size(), operators.size() + supervisors.size()).forEach(call -> assertEquals(AttendantPriority.SUPERVISOR, call.getAttendant().getAttendantPriority()));
+		finishedCalls.subList(operators.size() + supervisors.size(), operators.size() + supervisors.size() + 1).forEach(call -> assertEquals(AttendantPriority.DIRECTOR, call.getAttendant().getAttendantPriority()));
 	}
 
 	private List<ICall> spawnCalls(int amount) {

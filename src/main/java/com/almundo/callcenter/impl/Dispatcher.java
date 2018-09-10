@@ -3,6 +3,7 @@ package com.almundo.callcenter.impl;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Observable;
+import java.util.Observer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,9 +14,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.almundo.callcenter.IAttendant;
 import com.almundo.callcenter.ICall;
-import com.almundo.callcenter.IDispatcher;
 
-public class Dispatcher implements IDispatcher {
+public class Dispatcher implements Observer {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Dispatcher.class);
 
@@ -38,14 +38,13 @@ public class Dispatcher implements IDispatcher {
 					attendant.assignCall(callToDispatch);
 					priorityJobPoolExecutor.execute(attendant);
 				} catch (InterruptedException e) {
-					LOGGER.error("FAILED! " + e);
+					LOGGER.error("Thread Interrupted! " + e);
 					break;
 				}
 			}
 		});
 	}
 
-	@Override
 	public void dispatchCall(ICall call) {
 		pendingCallsQueue.add(call);
 	}
@@ -80,7 +79,6 @@ public class Dispatcher implements IDispatcher {
 		}
 	}
 
-	@Override
 	public void closeScheduler() {
 		close(priorityJobPoolExecutor);
 		close(priorityJobScheduler);
