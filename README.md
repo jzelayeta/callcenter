@@ -64,3 +64,6 @@ This is the core. Dispatcher has the following responsibilities:
  it will notify its Observer. And the Dispatcher, every time that is notified from an Attendant, will put it back to
  attendants queue to be ready for answer more calls.
  
+ ## UML Diagram of this Solution
+ 
+ ![solution](./doc/call_center_uml.png)

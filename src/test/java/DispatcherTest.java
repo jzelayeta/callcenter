@@ -9,15 +9,15 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import com.almundo.callcenter.model.AttendantPriority;
 import com.almundo.callcenter.model.Attendant;
+import com.almundo.callcenter.model.AttendantPriority;
 import com.almundo.callcenter.model.Call;
 import com.almundo.callcenter.model.Dispatcher;
 
 public class DispatcherTest {
 
 	private static final int POOL_SIZE = 10;
-	private static Dispatcher dispatcher;
+	private Dispatcher dispatcher;
 	private List<Attendant> operators;
 	private List<Attendant> supervisors;
 	private List<Attendant> directors;
@@ -43,7 +43,7 @@ public class DispatcherTest {
 	}
 
 	@Test
-	public void oneCallOnQueueMustBeDispatchedFromOperator() {
+	public void oneCallOnQueueMustBeDispatchedByOperator() {
 		Call call = new Call(UUID.randomUUID());
 
 		dispatcher.dispatchCall(call);
@@ -56,7 +56,7 @@ public class DispatcherTest {
 	}
 
 	@Test
-	public void sameAmountOfIncomingCallsAsAttendantsAvailability() {
+	public void sameAmountOfIncomingCallsAsAttendantsInitialAvailability() {
 		List<Call> calls = spawnCalls(10);
 		assertCallsAreDispatched(calls);
 	}
@@ -65,6 +65,41 @@ public class DispatcherTest {
 	public void moreAmountOfIncomingCallsThanAttendantsAvailability() {
 		List<Call> calls = spawnCalls(15);
 		assertCallsAreDispatched(calls);
+	}
+
+	@Test
+	public void assertIncomingCallsFromDifferentThreadsAreDispatched() {
+
+		Thread thread1 = new Thread(() -> {
+			List<Call> calls = spawnCalls(5);
+			calls.forEach(dispatcher::dispatchCall);
+		});
+
+		Thread thread2 = new Thread(() -> {
+			List<Call> calls = spawnCalls(5);
+			calls.forEach(dispatcher::dispatchCall);
+		});
+
+		Thread thread3 = new Thread(() -> {
+			List<Call> calls = spawnCalls(3);
+			calls.forEach(dispatcher::dispatchCall);
+		});
+
+		Thread thread4 = new Thread(() -> {
+			List<Call> calls = spawnCalls(7);
+			calls.forEach(dispatcher::dispatchCall);
+		});
+
+		thread1.start();
+		thread2.start();
+		thread3.start();
+		thread4.start();
+		waitMillis(25000);
+
+		assertEquals(20, dispatcher.getFinishedCallsQueue().size());
+
+		List<Call> finishedCalls = dispatcher.getFinishedCallsQueue().stream().sorted(Comparator.comparing(Call::getStart)).collect(Collectors.toList());
+		assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority(finishedCalls);
 	}
 
 	private void assertCallsAreDispatched(List<Call> calls) {
@@ -78,6 +113,11 @@ public class DispatcherTest {
 
 	}
 
+	/**
+	 * Given a list of finished calls, this method will assert that the first N calls, being N the number of initial attendants available, those calls
+	 * will be attended according the priority of those N attendants
+	 * @param finishedCalls
+	 */
 	private void assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority(List<Call> finishedCalls) {
 		finishedCalls.subList(0,
 				operators.size()).forEach(call -> assertEquals(AttendantPriority.OPERATOR, call.getAttendant().getAttendantPriority()));
@@ -96,13 +136,13 @@ public class DispatcherTest {
 	}
 
 	private List<Attendant> spawnAttendantsWithPriority(int amount, AttendantPriority priority) {
-		return Stream.generate(() -> new Attendant(new RandomDataGenerator().nextLong(1, 500), priority))
+		return Stream.generate(() -> new Attendant(new RandomDataGenerator().nextLong(1, Integer.MAX_VALUE), priority))
 				.limit(amount)
 				.peek(attendant -> attendant.addObserver(dispatcher))
 				.collect(Collectors.toList());
 	}
 
-	private static void waitMillis(long amountInMs) {
+	private void waitMillis(long amountInMs) {
 		while (dispatcher.getPendingCallsQueue().size() != 0) ;
 
 		try {

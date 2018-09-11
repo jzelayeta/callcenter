@@ -18,13 +18,14 @@ public class Dispatcher implements Observer {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Dispatcher.class);
 
 	private ExecutorService priorityJobPoolExecutor;
-	private ExecutorService priorityJobScheduler = Executors.newSingleThreadExecutor();
+	private ExecutorService priorityJobScheduler;
 	private PriorityBlockingQueue<Attendant> attendantsQueue;
 	private BlockingQueue<Call> pendingCallsQueue = new LinkedBlockingQueue<>();
 	private BlockingQueue<Call> finishedCallsQueue = new LinkedBlockingQueue<>();
 
 
 	public Dispatcher(Integer poolSize) {
+		priorityJobScheduler = Executors.newSingleThreadExecutor();
 		priorityJobPoolExecutor = Executors.newFixedThreadPool(poolSize);
 		attendantsQueue = new PriorityBlockingQueue<>(poolSize, Comparator.comparing(Attendant::getAttendantPriority));
 
@@ -43,7 +44,11 @@ public class Dispatcher implements Observer {
 		});
 	}
 
-	public void dispatchCall(Call call) {
+	/**
+	 * Inserts the incoming call into the {@code pendingCallsQueue}
+	 * @param call
+	 */
+	public synchronized void dispatchCall(Call call) {
 		pendingCallsQueue.add(call);
 	}
 
