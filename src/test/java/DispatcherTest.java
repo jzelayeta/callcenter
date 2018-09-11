@@ -70,30 +70,16 @@ public class DispatcherTest {
 	@Test
 	public void assertIncomingCallsFromDifferentThreadsAreDispatched() {
 
-		Thread thread1 = new Thread(() -> {
-			List<Call> calls = spawnCalls(5);
-			calls.forEach(dispatcher::dispatchCall);
-		});
+		Thread threadOne = spawnThreadWithIncomingCalls(5);
+		Thread threadTwo = spawnThreadWithIncomingCalls(5);
+		Thread threadThree = spawnThreadWithIncomingCalls(3);
+		Thread threadFour = spawnThreadWithIncomingCalls(7);
 
-		Thread thread2 = new Thread(() -> {
-			List<Call> calls = spawnCalls(5);
-			calls.forEach(dispatcher::dispatchCall);
-		});
+		threadOne.start();
+		threadTwo.start();
+		threadThree.start();
+		threadFour.start();
 
-		Thread thread3 = new Thread(() -> {
-			List<Call> calls = spawnCalls(3);
-			calls.forEach(dispatcher::dispatchCall);
-		});
-
-		Thread thread4 = new Thread(() -> {
-			List<Call> calls = spawnCalls(7);
-			calls.forEach(dispatcher::dispatchCall);
-		});
-
-		thread1.start();
-		thread2.start();
-		thread3.start();
-		thread4.start();
 		waitMillis(25000);
 
 		assertEquals(20, dispatcher.getFinishedCallsQueue().size());
@@ -140,6 +126,13 @@ public class DispatcherTest {
 				.limit(amount)
 				.peek(attendant -> attendant.addObserver(dispatcher))
 				.collect(Collectors.toList());
+	}
+
+	private Thread spawnThreadWithIncomingCalls(int amountOfCalls){
+		return new Thread(() -> {
+			List<Call> calls = spawnCalls(amountOfCalls);
+			calls.forEach(dispatcher::dispatchCall);
+		});
 	}
 
 	private void waitMillis(long amountInMs) {
