@@ -48,7 +48,7 @@ public class Dispatcher implements Observer {
 	 * Inserts the incoming call into the {@code pendingCallsQueue}
 	 * @param call
 	 */
-	public synchronized void dispatchCall(Call call) {
+	public void dispatchCall(Call call) {
 		pendingCallsQueue.add(call);
 	}
 
