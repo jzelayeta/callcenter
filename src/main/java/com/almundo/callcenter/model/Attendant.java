@@ -18,8 +18,9 @@ public class Attendant extends Observable implements Runnable {
 	}
 
 	public void run() {
-		this.currentCall.setStart(System.nanoTime());
-		LOGGER.info("Call " + currentCall.getId() + " started by Attendant id: " + this.id + " with priority : " + attendantPriority.name());
+		long startTime = System.nanoTime();
+		this.currentCall.setStart(startTime);
+		LOGGER.info("Call " + currentCall.getId() + " started at " + startTime + " by Attendant id: " + this.id + " with priority : " + attendantPriority.name());
 		int callDuration = ThreadLocalRandom.current().nextInt(5000, 10000);
 
 		try {

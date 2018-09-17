@@ -32,8 +32,8 @@ public class Dispatcher implements Observer {
 		priorityJobScheduler.execute(() -> {
 			while (true) {
 				try {
-					Attendant attendant = attendantsQueue.take();
 					Call callToDispatch = pendingCallsQueue.take();
+					Attendant attendant = attendantsQueue.take();
 					attendant.assignCall(callToDispatch);
 					priorityJobPoolExecutor.execute(attendant);
 				} catch (InterruptedException e) {
@@ -62,6 +62,10 @@ public class Dispatcher implements Observer {
 
 	public BlockingQueue<Call> getPendingCallsQueue() {
 		return pendingCallsQueue;
+	}
+
+	public PriorityBlockingQueue<Attendant> getAttendantsQueue() {
+		return attendantsQueue;
 	}
 
 	@Override

@@ -1,6 +1,5 @@
 import static org.junit.Assert.assertEquals;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -9,6 +8,8 @@ import org.apache.commons.math3.random.RandomDataGenerator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.almundo.callcenter.model.Attendant;
 import com.almundo.callcenter.model.AttendantPriority;
 import com.almundo.callcenter.model.Call;
@@ -52,6 +53,7 @@ public class DispatcherTest {
 
 		assertEquals(1, dispatcher.getFinishedCallsQueue().size());
 		assertEquals(AttendantPriority.OPERATOR, dispatcher.getFinishedCallsQueue().peek().getAttendant().getAttendantPriority());
+		assertAllAttendantsAreAvailableAfterProcessingAllCalls();
 
 	}
 
@@ -59,60 +61,69 @@ public class DispatcherTest {
 	public void sameAmountOfIncomingCallsAsAttendantsInitialAvailability() {
 		List<Call> calls = spawnCalls(10);
 		assertCallsAreDispatched(calls);
+		assertAllAttendantsAreAvailableAfterProcessingAllCalls();
 	}
 
 	@Test
 	public void moreAmountOfIncomingCallsThanAttendantsAvailability() {
 		List<Call> calls = spawnCalls(15);
 		assertCallsAreDispatched(calls);
+		assertAllAttendantsAreAvailableAfterProcessingAllCalls();
+
 	}
 
 	@Test
 	public void assertIncomingCallsFromDifferentThreadsAreDispatched() {
 
-		Thread threadOne = spawnThreadWithIncomingCalls(5);
-		Thread threadTwo = spawnThreadWithIncomingCalls(5);
-		Thread threadThree = spawnThreadWithIncomingCalls(3);
-		Thread threadFour = spawnThreadWithIncomingCalls(7);
+		final int AMOUNT_OF_THREADS = 4;
+		final int AMOUNT_OF_CALLS_PER_THREAD = 5;
+		final int TOTAL_AMOUNT_OF_CALLS = AMOUNT_OF_THREADS * AMOUNT_OF_CALLS_PER_THREAD;
 
-		threadOne.start();
-		threadTwo.start();
-		threadThree.start();
-		threadFour.start();
+		List<Thread> threads = spawnThreadWithIncomingCalls(AMOUNT_OF_THREADS, spawnCalls(AMOUNT_OF_CALLS_PER_THREAD));
+
+		threads.forEach(Thread::start);
 
 		waitMillis(25000);
 
-		assertEquals(20, dispatcher.getFinishedCallsQueue().size());
+		assertEquals(TOTAL_AMOUNT_OF_CALLS, dispatcher.getFinishedCallsQueue().size());
 
-		List<Call> finishedCalls = dispatcher.getFinishedCallsQueue().stream().sorted(Comparator.comparing(Call::getStart)).collect(Collectors.toList());
-		assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority(finishedCalls);
+		assertAllAttendantsAreAvailableAfterProcessingAllCalls();
 	}
 
 	private void assertCallsAreDispatched(List<Call> calls) {
 		calls.forEach(dispatcher::dispatchCall);
+
 		waitMillis(10000);
+
 		assertEquals(calls.size(), dispatcher.getFinishedCallsQueue().size());
 
-		List<Call> finishedCalls = dispatcher.getFinishedCallsQueue().stream().sorted(Comparator.comparing(Call::getStart)).collect(Collectors.toList());
-
-		assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority(finishedCalls);
+		assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority();
 
 	}
 
 	/**
 	 * Given a list of finished calls, this method will assert that the first N calls, being N the number of initial attendants available, those calls
 	 * will be attended according the priority of those N attendants
-	 * @param finishedCalls
 	 */
-	private void assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority(List<Call> finishedCalls) {
-		finishedCalls.subList(0,
+	private void assertFirstIncomingCallsAreDispatchedAccordingAttendantsPriority() {
+		List<Call> finishedCallsOrderedByAttendantPriorityAsc = getFinishedCallsOrderedByAttendantPriorityAsc();
+
+		finishedCallsOrderedByAttendantPriorityAsc.subList(0,
 				operators.size()).forEach(call -> assertEquals(AttendantPriority.OPERATOR, call.getAttendant().getAttendantPriority()));
 
-		finishedCalls.subList(operators.size(),
+		finishedCallsOrderedByAttendantPriorityAsc.subList(operators.size(),
 				operators.size() + supervisors.size()).forEach(call -> assertEquals(AttendantPriority.SUPERVISOR, call.getAttendant().getAttendantPriority()));
 
-		finishedCalls.subList(operators.size() + supervisors.size(),
+		finishedCallsOrderedByAttendantPriorityAsc.subList(operators.size() + supervisors.size(),
 				operators.size() + supervisors.size() + directors.size()).forEach(call -> assertEquals(AttendantPriority.DIRECTOR, call.getAttendant().getAttendantPriority()));
+	}
+
+	/**
+	 * Assert that after processing all pending calls, attendants will be idle on {@code attendantsQueue} waiting to receive more incoming calls
+	 */
+	private void assertAllAttendantsAreAvailableAfterProcessingAllCalls(){
+		int totalAttendantsSize = operators.size() + supervisors.size() + directors.size();
+		assertEquals(totalAttendantsSize, dispatcher.getAttendantsQueue().size());
 	}
 
 	private List<Call> spawnCalls(int amount) {
@@ -128,11 +139,14 @@ public class DispatcherTest {
 				.collect(Collectors.toList());
 	}
 
-	private Thread spawnThreadWithIncomingCalls(int amountOfCalls){
-		return new Thread(() -> {
-			List<Call> calls = spawnCalls(amountOfCalls);
-			calls.forEach(dispatcher::dispatchCall);
-		});
+	private List<Thread> spawnThreadWithIncomingCalls(int amountOfThreads, List<Call> calls){
+		return Stream.generate(() -> new Thread(() -> calls.forEach(dispatcher::dispatchCall)))
+				.limit(amountOfThreads)
+				.collect(Collectors.toList());
+	}
+
+	private List<Call> getFinishedCallsOrderedByAttendantPriorityAsc() {
+		return dispatcher.getFinishedCallsQueue().stream().sorted().collect(Collectors.toList());
 	}
 
 	private void waitMillis(long amountInMs) {
